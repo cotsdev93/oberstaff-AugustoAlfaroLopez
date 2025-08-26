@@ -1,35 +1,38 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './scss/index.scss'
+import { useEffect, useState } from "react";
+import ProfileGrid from "./components/ProfileGrid";
+import { fetchRandomUsers } from "./services/randomUser";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [profiles, setProfiles] = useState([]);
+  const [loading, setLoading] = useState("initial");
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        setLoading("initial");
+        setError(null);
+        const data = await fetchRandomUsers(3, ctrl.signal);
+        setProfiles(data);
+        setLoading("idle");
+      } catch (e) {
+        if (e.name !== "AbortError") {
+          setError(e.message || "Error al cargar usuarios");
+          setLoading("idle");
+        }
+      }
+    })();
+    return () => ctrl.abort();
+  }, []);
+
+  if (loading === "initial") return <main className="page">Cargando…</main>;
+  if (error) return <main className="page">Error: {error}</main>;
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <main className="page">
+      <h1 className="page__title">Usuarios</h1>
+      <ProfileGrid profiles={profiles} />
+    </main>
+  );
 }
-
-export default App
